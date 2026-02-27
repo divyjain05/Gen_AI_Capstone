@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 
 from sklearn.model_selection import train_test_split
@@ -15,26 +14,32 @@ st.title("Vehicle Maintenance Prediction System")
 
 
 
-#Load Dataset
+# Load Data
 @st.cache_data
 def load_data():
-    return pd.read_csv("Vehicle_Maintenance_records.csv")
+    df = pd.read_csv("Vehicle_Maintenance_records.csv")
+    df.columns = df.columns.str.strip()
+    return df
 
 df = load_data()
 
 
-#Preprocessing
 
-df = df.dropna(subset=["Need_Maintenance"])
+# Prepare Data
+required_cols = [
+    "Mileage",
+    "Reported_Issues",
+    "Vehicle_Model",
+    "Engine_Size",
+    "Need_Maintenance"
+]
 
-df["Mileage"] = pd.to_numeric(df["Mileage"], errors="coerce")
-df["Reported_Issues"] = pd.to_numeric(df["Reported_Issues"], errors="coerce")
-df["Engine_Size"] = pd.to_numeric(df["Engine_Size"], errors="coerce")
+if not all(col in df.columns for col in required_cols):
+    st.error("Dataset columns do not match required format.")
+    st.stop()
 
-df = df.dropna(subset=["Mileage", "Reported_Issues", "Engine_Size", "Vehicle_Model"])
-
-y = df["Need_Maintenance"]
 X = df[["Mileage", "Reported_Issues", "Vehicle_Model", "Engine_Size"]]
+y = df["Need_Maintenance"]
 
 categorical_cols = ["Vehicle_Model"]
 numerical_cols = ["Mileage", "Reported_Issues", "Engine_Size"]
@@ -58,8 +63,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 
-#Train Models
 
+# Train Models
 log_model = LogisticRegression(random_state=42, solver="liblinear")
 log_model.fit(X_train, y_train)
 
@@ -68,17 +73,17 @@ dt_model.fit(X_train, y_train)
 
 
 
-#Prediction Interface (TOP)
+# Prediction Interface (TOP)
 st.subheader("Predict Maintenance Requirement")
 
 with st.form("prediction_form"):
 
-    mileage = st.text_input("Mileage (in Km)")
+    mileage = st.text_input("Mileage (in miles)")
     issues = st.text_input("Reported Issues")
     engine_size = st.text_input("Engine Size (in cc)")
     vehicle_model = st.selectbox(
         "Vehicle Model",
-        df["Vehicle_Model"].unique()
+        sorted(df["Vehicle_Model"].unique())
     )
 
     submit = st.form_submit_button("Predict")
@@ -126,8 +131,7 @@ if submit:
 
 
 
-#Dataset Overview
-
+# Analytics Section
 st.subheader("Dataset Overview")
 
 col1, col2 = st.columns(2)
@@ -140,9 +144,6 @@ with col2:
     fig = px.histogram(df, x="Mileage", title="Mileage Distribution")
     st.plotly_chart(fig, use_container_width=True)
 
-
-
-#Evaluation
 
 st.subheader("Model Evaluation")
 
