@@ -5,7 +5,8 @@ import joblib
 import matplotlib.pyplot as plt
 
 
-#Load Saved Models & Data
+# Load Artifacts
+
 log_model = joblib.load("logistic_model.pkl")
 tree_model = joblib.load("tree_model.pkl")
 scaler = joblib.load("scaler.pkl")
@@ -16,36 +17,52 @@ df = pd.read_csv("cleaned_vehicle_data.csv")
 st.title("Vehicle Maintenance Prediction System")
 
 
-#Model Selection
+# Model Selection
 
 model_choice = st.selectbox(
-    "Select Prediction Model",
+    "Select Model",
     ["Logistic Regression", "Decision Tree"]
 )
 
-st.header("Enter Vehicle Details")
+st.header("Enter Key Vehicle Details")
 
 
-#Dynamic Input Fields
+# Minimal User Inputs
 
-input_data = {}
+mileage = st.number_input("Mileage", min_value=0.0)
+vehicle_age = st.number_input("Vehicle Age (years)", min_value=0.0)
+engine_size = st.number_input("Engine Size (cc)", min_value=0.0)
+odometer = st.number_input("Odometer Reading", min_value=0.0)
+service_history = st.number_input("Number of Past Services", min_value=0.0)
 
+
+# Construct Full Feature Row
+
+input_dict = {}
+
+# Fill with dataset medians/modes
 for col in df.columns:
     if col == "Need_Maintenance":
         continue
     
     if df[col].dtype == "object":
-        input_data[col] = st.selectbox(col, df[col].unique())
+        input_dict[col] = df[col].mode()[0]
     else:
-        input_data[col] = st.number_input(col, float(df[col].min()), float(df[col].max()))
+        input_dict[col] = df[col].median()
 
-# Convert input to dataframe
-input_df = pd.DataFrame([input_data])
+# Override selected fields
+input_dict["Mileage"] = mileage
+input_dict["Vehicle_Age"] = vehicle_age
+input_dict["Engine_Size"] = engine_size
+input_dict["Odometer_Reading"] = odometer
+input_dict["Service_History"] = service_history
 
-# One-hot encode input same as training
+input_df = pd.DataFrame([input_dict])
+
+# One-hot encode
 input_df = pd.get_dummies(input_df)
 
-# Ensure same column structure
+# Align columns
 for col in feature_columns:
     if col not in input_df.columns:
         input_df[col] = 0
@@ -53,7 +70,7 @@ for col in feature_columns:
 input_df = input_df[feature_columns]
 
 
-#Prediction
+# Prediction
 
 if st.button("Predict"):
 
@@ -64,33 +81,30 @@ if st.button("Predict"):
         prediction = tree_model.predict(input_df)
 
     if prediction[0] == 1:
-        st.error("Prediction: Vehicle NEEDS Maintenance")
+        st.error("Vehicle NEEDS Maintenance")
     else:
-        st.success("Prediction: No Maintenance Required")
+        st.success("No Maintenance Required")
 
 
-#Data Analytics Section
+# Analytics Section
 
 st.header("Dataset Analytics")
 
-st.subheader("Maintenance Distribution")
+col1, col2 = st.columns(2)
 
-fig1, ax1 = plt.subplots()
-df["Need_Maintenance"].value_counts().plot(kind="bar", ax=ax1)
-ax1.set_xlabel("Need Maintenance (0 = No, 1 = Yes)")
-ax1.set_ylabel("Count")
-st.pyplot(fig1)
+with col1:
+    st.subheader("Maintenance Distribution")
+    fig1, ax1 = plt.subplots()
+    df["Need_Maintenance"].value_counts().plot(kind="bar", ax=ax1)
+    st.pyplot(fig1)
 
-st.subheader("Average Mileage by Maintenance Status")
-
-fig2, ax2 = plt.subplots()
-df.groupby("Need_Maintenance")["Mileage"].mean().plot(kind="bar", ax=ax2)
-ax2.set_ylabel("Average Mileage")
-st.pyplot(fig2)
+with col2:
+    st.subheader("Average Mileage by Status")
+    fig2, ax2 = plt.subplots()
+    df.groupby("Need_Maintenance")["Mileage"].mean().plot(kind="bar", ax=ax2)
+    st.pyplot(fig2)
 
 st.subheader("Vehicle Age Distribution")
-
 fig3, ax3 = plt.subplots()
 df["Vehicle_Age"].hist(ax=ax3)
-ax3.set_xlabel("Vehicle Age")
 st.pyplot(fig3)
