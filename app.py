@@ -108,7 +108,7 @@ st.subheader("Predict Maintenance Requirement")
 with st.form("prediction_form"):
     mileage = st.number_input("Mileage", min_value=0.0)
     issues = st.number_input("Reported Issues", min_value=0)
-    engine_size = st.number_input("Engine Size", min_value=0.0)
+    engine_size = st.number_input("Engine Size (in cc)", min_value=0.0)
     vehicle_model = st.selectbox(
         "Vehicle Model",
         df["Vehicle_Model"].unique()
