@@ -180,5 +180,3 @@ python genai_capstone.py
 - Divy Kumar Jain
 - Utkarsh Jain
 - Praveen Kumar Nitharwal
-Machine Learning Project
-
