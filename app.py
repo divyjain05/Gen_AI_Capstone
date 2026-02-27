@@ -1,170 +1,96 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import numpy as np
+import joblib
+import matplotlib.pyplot as plt
 
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix
 
-st.set_page_config(page_title="Vehicle Maintenance Prediction", layout="wide")
+#Load Saved Models & Data
+log_model = joblib.load("logistic_model.pkl")
+tree_model = joblib.load("tree_model.pkl")
+scaler = joblib.load("scaler.pkl")
+feature_columns = joblib.load("feature_columns.pkl")
+
+df = pd.read_csv("cleaned_vehicle_data.csv")
 
 st.title("Vehicle Maintenance Prediction System")
 
 
+#Model Selection
 
-# Load Data
-@st.cache_data
-def load_data():
-    df = pd.read_csv("Vehicle_Maintenance_records.csv")
-    df.columns = df.columns.str.strip()
-    return df
-
-df = load_data()
-
-
-
-# Prepare Data
-required_cols = [
-    "Mileage",
-    "Reported_Issues",
-    "Vehicle_Model",
-    "Engine_Size",
-    "Need_Maintenance"
-]
-
-if not all(col in df.columns for col in required_cols):
-    st.error("Dataset columns do not match required format.")
-    st.stop()
-
-X = df[["Mileage", "Reported_Issues", "Vehicle_Model", "Engine_Size"]]
-y = df["Need_Maintenance"]
-
-categorical_cols = ["Vehicle_Model"]
-numerical_cols = ["Mileage", "Reported_Issues", "Engine_Size"]
-
-encoder = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
-encoded = encoder.fit_transform(X[categorical_cols])
-
-encoded_df = pd.DataFrame(
-    encoded,
-    columns=encoder.get_feature_names_out(categorical_cols),
-    index=X.index
+model_choice = st.selectbox(
+    "Select Prediction Model",
+    ["Logistic Regression", "Decision Tree"]
 )
 
-X_processed = pd.concat([encoded_df, X[numerical_cols]], axis=1)
-
-scaler = StandardScaler()
-X_processed[numerical_cols] = scaler.fit_transform(X_processed[numerical_cols])
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X_processed, y, test_size=0.2, random_state=42
-)
+st.header("Enter Vehicle Details")
 
 
+#Dynamic Input Fields
 
-# Train Models
-log_model = LogisticRegression(random_state=42, solver="liblinear")
-log_model.fit(X_train, y_train)
+input_data = {}
 
-dt_model = DecisionTreeClassifier(random_state=42)
-dt_model.fit(X_train, y_train)
+for col in df.columns:
+    if col == "Need_Maintenance":
+        continue
+    
+    if df[col].dtype == "object":
+        input_data[col] = st.selectbox(col, df[col].unique())
+    else:
+        input_data[col] = st.number_input(col, float(df[col].min()), float(df[col].max()))
 
+# Convert input to dataframe
+input_df = pd.DataFrame([input_data])
 
+# One-hot encode input same as training
+input_df = pd.get_dummies(input_df)
 
-# Prediction Interface (TOP)
-st.subheader("Predict Maintenance Requirement")
+# Ensure same column structure
+for col in feature_columns:
+    if col not in input_df.columns:
+        input_df[col] = 0
 
-with st.form("prediction_form"):
-
-    mileage = st.text_input("Mileage (in miles)")
-    issues = st.text_input("Reported Issues")
-    engine_size = st.text_input("Engine Size (in cc)")
-    vehicle_model = st.selectbox(
-        "Vehicle Model",
-        sorted(df["Vehicle_Model"].unique())
-    )
-
-    submit = st.form_submit_button("Predict")
-
-if submit:
-    try:
-        mileage = float(mileage)
-        issues = int(issues)
-        engine_size = float(engine_size)
-
-        if engine_size > 20000:
-            st.error("Engine size cannot exceed 20000 cc.")
-        else:
-            input_df = pd.DataFrame({
-                "Mileage": [mileage],
-                "Reported_Issues": [issues],
-                "Vehicle_Model": [vehicle_model],
-                "Engine_Size": [engine_size]
-            })
-
-            encoded_input = encoder.transform(input_df[categorical_cols])
-            encoded_input_df = pd.DataFrame(
-                encoded_input,
-                columns=encoder.get_feature_names_out(categorical_cols)
-            )
-
-            input_processed = pd.concat(
-                [encoded_input_df, input_df[numerical_cols].reset_index(drop=True)],
-                axis=1
-            )
-
-            input_processed[numerical_cols] = scaler.transform(
-                input_processed[numerical_cols]
-            )
-
-            prediction = log_model.predict(input_processed)[0]
-
-            if prediction == 1:
-                st.error("Prediction: Maintenance Required")
-            else:
-                st.success("Prediction: No Immediate Maintenance Required")
-
-    except:
-        st.error("Enter valid numeric values.")
+input_df = input_df[feature_columns]
 
 
+#Prediction
 
-# Analytics Section
-st.subheader("Dataset Overview")
+if st.button("Predict"):
 
-col1, col2 = st.columns(2)
+    if model_choice == "Logistic Regression":
+        input_scaled = scaler.transform(input_df)
+        prediction = log_model.predict(input_scaled)
+    else:
+        prediction = tree_model.predict(input_df)
 
-with col1:
-    st.write("Shape:", df.shape)
-    st.dataframe(df.head())
-
-with col2:
-    fig = px.histogram(df, x="Mileage", title="Mileage Distribution")
-    st.plotly_chart(fig, use_container_width=True)
+    if prediction[0] == 1:
+        st.error("Prediction: Vehicle NEEDS Maintenance")
+    else:
+        st.success("Prediction: No Maintenance Required")
 
 
-st.subheader("Model Evaluation")
+#Data Analytics Section
 
-y_pred_log = log_model.predict(X_test)
-y_pred_dt = dt_model.predict(X_test)
+st.header("Dataset Analytics")
 
-acc_log = accuracy_score(y_test, y_pred_log)
-acc_dt = accuracy_score(y_test, y_pred_dt)
+st.subheader("Maintenance Distribution")
 
-col1, col2 = st.columns(2)
+fig1, ax1 = plt.subplots()
+df["Need_Maintenance"].value_counts().plot(kind="bar", ax=ax1)
+ax1.set_xlabel("Need Maintenance (0 = No, 1 = Yes)")
+ax1.set_ylabel("Count")
+st.pyplot(fig1)
 
-with col1:
-    st.metric("Logistic Regression Accuracy", f"{acc_log:.4f}")
-    cm_log = confusion_matrix(y_test, y_pred_log)
-    fig_cm_log = px.imshow(cm_log, text_auto=True,
-                           title="Logistic Regression Confusion Matrix")
-    st.plotly_chart(fig_cm_log, use_container_width=True)
+st.subheader("Average Mileage by Maintenance Status")
 
-with col2:
-    st.metric("Decision Tree Accuracy", f"{acc_dt:.4f}")
-    cm_dt = confusion_matrix(y_test, y_pred_dt)
-    fig_cm_dt = px.imshow(cm_dt, text_auto=True,
-                          title="Decision Tree Confusion Matrix")
-    st.plotly_chart(fig_cm_dt, use_container_width=True)
+fig2, ax2 = plt.subplots()
+df.groupby("Need_Maintenance")["Mileage"].mean().plot(kind="bar", ax=ax2)
+ax2.set_ylabel("Average Mileage")
+st.pyplot(fig2)
+
+st.subheader("Vehicle Age Distribution")
+
+fig3, ax3 = plt.subplots()
+df["Vehicle_Age"].hist(ax=ax3)
+ax3.set_xlabel("Vehicle Age")
+st.pyplot(fig3)
