@@ -176,9 +176,9 @@ python genai_capstone.py
 ---
 
 ## Authors
-"""
-Divy Kumar Jain
-Utkarsh Jain
-Praveen Kumar Nitharwal
+
+- Divy Kumar Jain
+- Utkarsh Jain
+- Praveen Kumar Nitharwal
 Machine Learning Project
-"""
+
