@@ -13,11 +13,11 @@ The objective of this project is to build a complete end-to-end machine learning
 ```
 /Vehicle_Maintenance_Prediction/
 │
-├── data/
-│   └── Vehicle_Maintenance_records.csv      # Dataset (Upload manually to Colab)
+├──── Vehicle_Maintenance_records.csv        # Dataset
 │
-├── notebooks/
-│   └── GenAI_Capstone.ipynb                 # Google Colab notebook
+├── app.py                                   # Deployment application
+│
+├── genai_capstone.py                        # Python implementation script
 ├── requirements.txt                         # Project dependencies
 └── README.md                                # Project documentation
 ```
