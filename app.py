@@ -7,7 +7,7 @@ import joblib
 # Load Models & Artifacts
 # --------------------------------------------------
 log_model = joblib.load("logistic_model_balanced.pkl")
-tree_model = joblib.load("decision_tree_model.pkl")
+tree_model = joblib.load("decision_tree_balanced.pkl")
 scaler = joblib.load("scaler.pkl")
 feature_columns = joblib.load("feature_columns.pkl")
 
