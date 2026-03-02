@@ -17,7 +17,7 @@ st.title("Vehicle Maintenance Risk Assessment System")
 st.write("Predict whether a vehicle requires maintenance using Logistic Regression or Decision Tree.")
 
 # Model Selection
-model_choice = st.radio("Select Model", ["Logistic Regression", "Decision Tree (Prefered Model)"])
+model_choice = st.radio("Select Model", ["Decision Tree (Prefered Model)" , "Logistic Regression"])
 
 # User Inputs (Must Match Training)
 st.header("Enter Vehicle Details")
@@ -113,20 +113,54 @@ df["Risk_Score"] = log_model.predict_proba(X_full_scaled)[:,1]
 
 col3, col4 = st.columns(2)
 
+
+# 1.Risk Score Distribution
+
 with col3:
     st.subheader("Risk Score Distribution")
-    st.bar_chart(df["Risk_Score"].value_counts(bins=10))
 
+    risk_bins = pd.cut(df["Risk_Score"], bins=10)
+
+    risk_dist = (
+        df.groupby(risk_bins)
+          .size()
+          .reset_index(name="Count")
+    )
+
+    # Convert interval to readable string
+    risk_dist["Risk_Score"] = risk_dist["Risk_Score"].apply(
+        lambda x: f"{round(x.left,2)} - {round(x.right,2)}"
+    )
+
+    st.bar_chart(risk_dist.set_index("Risk_Score"))
+
+# 2. Average Risk by Vehicle Age
 with col4:
     st.subheader("Average Risk by Vehicle Age")
-    st.bar_chart(df.groupby("Vehicle_Age")["Risk_Score"].mean())
 
+    age_group = (
+        df.groupby("Vehicle_Age")["Risk_Score"]
+          .mean()
+          .reset_index()
+    )
+
+    age_group["Vehicle_Age"] = age_group["Vehicle_Age"].astype(str)
+
+    st.bar_chart(age_group.set_index("Vehicle_Age"))
+
+# 3. Average Risk by Mileage Range
 st.subheader("Average Risk by Mileage Range")
 
 mileage_bins = pd.cut(df["Mileage"], bins=10)
-mileage_group = df.groupby(mileage_bins)["Risk_Score"].mean().reset_index()
 
-# Convert interval bins to string for Altair compatibility
-mileage_group["Mileage"] = mileage_group["Mileage"].astype(str)
+mileage_group = (
+    df.groupby(mileage_bins)["Risk_Score"]
+      .mean()
+      .reset_index()
+)
+
+mileage_group["Mileage"] = mileage_group["Mileage"].apply(
+    lambda x: f"{int(x.left):,} - {int(x.right):,}"
+)
 
 st.bar_chart(mileage_group.set_index("Mileage"))
