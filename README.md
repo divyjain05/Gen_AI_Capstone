@@ -1,182 +1,187 @@
-# Intelligent Vehicle Maintenance Prediction
-
-## Project Overview
+# Vehicle Maintenance Risk Prediction System
 
 The Intelligent Vehicle Maintenance Prediction project is a Machine Learning–based classification system designed to predict whether a vehicle requires maintenance based on structured maintenance and operational data.
 
-The objective of this project is to build a complete end-to-end machine learning pipeline, including data preprocessing, feature engineering, model training, evaluation, and performance comparison using traditional machine learning algorithms.
+---
+
+## Objective
+
+Design and implement a supervised ML system that:
+
+- Accepts historical vehicle maintenance data  
+- Performs preprocessing and feature engineering  
+- Handles class imbalance using SMOTE  
+- Predicts maintenance requirement probability  
+- Provides a working Streamlit UI for real-time inference  
+
+---
+
+## Dataset
+
+**Source:** Kaggle – Vehicle Maintenance Records Dataset  
+**Target Variable:** `Need_Maintenance` (Binary Classification)
+
+- 0 → No maintenance required  
+- 1 → Maintenance required  
+
+---
+
+## Dataset Modifications
+
+To simulate realistic operational conditions:
+
+- Date columns were removed as they were not directly useful for modeling.
+- Missing values were imputed using median (numeric) and mode (categorical).
+- Extreme outliers (top & bottom 10% in selected features) were removed to reduce deterministic separation.
+- Feature engineering was applied (`mileage_per_year`) to improve predictive signal.
+- One-hot encoding was performed for categorical variables.
+
+Class imbalance (~80% maintenance cases) was addressed using:
+
+**SMOTE (Synthetic Minority Over-sampling Technique)**
+
+SMOTE was applied only on training data to avoid data leakage.
+
+---
+
+## Technical Stack
+
+- Python  
+- Scikit-learn  
+- Pandas  
+- NumPy  
+- Imbalanced-learn (SMOTE)  
+- Streamlit  
+
+---
+
+## Models Evaluated
+
+- Logistic Regression (Regularized)  
+- Decision Tree (Depth-limited)  
+
+### Evaluation Metrics
+
+- Accuracy  
+- Precision  
+- Recall  
+- F1 Score  
+- ROC-AUC  
+- Confusion Matrix  
+
+---
+
+## Model Selection Strategy
+
+In predictive maintenance systems, false negatives are costly.
+
+Failing to predict a maintenance requirement may lead to:
+
+- Unexpected breakdowns  
+- Safety risks  
+- Higher repair costs  
+- Operational downtime  
+
+Therefore, **Recall** was prioritized during evaluation.
+
+A custom probability threshold of **0.7** was selected to:
+
+- Reduce false positives  
+- Maintain strong recall  
+- Provide high-confidence maintenance alerts  
+
+---
+
+## Model Performance (Post-Tuning)
+
+### Logistic Regression
+- ROC-AUC ≈ 0.90–0.95  
+- Balanced recall with regularization (C=0.3)  
+
+### Decision Tree
+- ROC-AUC ≈ 0.85–0.92  
+- Depth-limited to prevent overfitting  
+- Improved interpretability  
+
+Although Logistic Regression produced slightly stronger ROC-AUC scores, both models demonstrated competitive performance.
+
+---
+
+## Final Deployment Models
+
+Both Logistic Regression and Decision Tree are available in the deployed application.
+
+### Risk Categorization
+
+- Probability < 0.4 → LOW  
+- 0.4 – 0.7 → MODERATE  
+- > 0.7 → HIGH  
+
+---
+
+## Deployment Features
+
+The deployed model uses:
+
+- Mileage  
+- Vehicle Age  
+- Reported Issues  
+- Engine Size  
+- Service History  
+- Odometer Reading  
+- Derived Feature: `mileage_per_year`  
+
+The application provides:
+
+- Real-time probability prediction  
+- Binary maintenance classification  
+- Risk level categorization  
+- Dataset-level risk analytics  
 
 ---
 
 ## Project Structure
 
 ```
-/Vehicle_Maintenance_Prediction/
-│
-├──── Vehicle_Maintenance_records.csv        # Dataset
-│
-├── app.py                                   # Deployment application
-│
-├── genai_capstone.py                        # Python implementation script
-├── requirements.txt                         # Project dependencies
-└── README.md                                # Project documentation
+.
+├── app.py  
+├── requirements.txt  
+├── cleaned_vehicle_data.csv  
+├── logistic_model_balanced.pkl  
+├── decision_tree_balanced.pkl  
+├── scaler.pkl  
+├── feature_columns.pkl  
+└── notebook/
+    └── Vehicle_Maintenance_Model.ipynb  
+
 ```
 
 ---
 
-## Dataset
+## Setup Instructions
 
-- **File Name:** `Vehicle_Maintenance_records.csv`
-- **Type:** Structured tabular dataset
-- **Target Variable:** Maintenance Required (Binary Classification)
-
-The dataset contains vehicle-related attributes such as mileage, vehicle age, reported issues, engine size, odometer reading, insurance premium, service history, accident history, and fuel efficiency.
-
----
-
-## Methodology
-
-### 1. Data Loading
-- Dataset loaded using Pandas.
-- Initial inspection using `.head()`, `.info()`, and `.describe()`.
-
-### 2. Data Cleaning
-- Missing numerical values handled using median imputation.
-- Data consistency verified across all columns.
-
-### 3. Feature Engineering
-- Selected key predictive features:
-  - Mileage
-  - Reported Issues
-  - Vehicle Model
-  - Engine Size
-- One-Hot Encoding applied to categorical variable:
-  - Vehicle Model
-- Feature scaling applied using `StandardScaler`.
-
-### 4. Train-Test Split
-- 80% Training Data
-- 20% Testing Data
-- `random_state = 42` for reproducibility.
-
----
-
-## Machine Learning Models
-
-### Logistic Regression
-- Solver: `liblinear`
-- Penalty: `l2`
-
-### Decision Tree Classifier
-- Default parameters
-- `random_state = 42`
-
----
-
-## Model Evaluation
-
-The following evaluation metrics were used:
-
-- Accuracy Score
-- Classification Report
-- Confusion Matrix
-- F1-Score (Class 1)
-
-### Performance Summary
-
-| Model                | Accuracy     | F1-Score (Class 1) |
-|----------------------|--------------|--------------------|
-| Logistic Regression  | Higher       | 0.89               |
-| Decision Tree        | Competitive  | 0.84               |
-
-Logistic Regression demonstrated better generalization performance based on evaluation metrics.
-
----
-
-## Installation and Setup
-
-### Option 1: Google Colab
-
-1. Open Google Colab.
-2. Upload `GenAI_Capstone.ipynb`.
-3. Upload `Vehicle_Maintenance_records.csv` to the Colab environment.
-4. Execute all cells sequentially.
-
-### Option 2: Local Environment
-
-#### Step 1: Clone the Repository
-
-```bash
-git clone https://github.com/divyjain05/Gen_AI_Capstone.git
-cd Vehicle_Maintenance_Prediction
+- Install dependencies:
 ```
-
-#### Step 2: Create Virtual Environment (Recommended)
-
-```bash
-python -m venv venv
-```
-
-Activate environment:
-
-- Windows:
-```bash
-venv\\Scripts\\activate
-```
-
-- macOS/Linux:
-```bash
-source venv/bin/activate
-```
-
-#### Step 3: Install Dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
-#### Step 4: Run the Script
 
-```bash
-python genai_capstone.py
+- Run The Streamlit App
+
+From the project root:
+```
+streamlit run app.py
 ```
 
----
+- Then open the local URL shown in the terminal (typically http://localhost:8501)
 
-## Tech Stack
+Predicted Output
 
-- Python
-- Pandas
-- NumPy
-- Matplotlib
-- Seaborn
-- Scikit-learn
+The app performs binary classification:
 
----
+1 → Maintenance Required  
+0 → No Immediate Maintenance Required  
 
-## Key Learnings
 
-- Data preprocessing and missing value handling
-- Feature encoding and scaling techniques
-- Model training and evaluation
-- Comparative analysis of classification algorithms
-- Performance visualization
+## Hosted Link
 
----
-
-## Future Enhancements
-
-- Hyperparameter tuning using GridSearchCV
-- Cross-validation implementation
-- Feature importance analysis
-- Model serialization using Pickle or Joblib
-- Deployment using Streamlit
-- Integration of advanced ensemble models (Random Forest, XGBoost)
-
----
-
-## Authors
-
-- Divy Kumar Jain
-- Utkarsh Jain
-- Praveen Kumar Nitharwal
