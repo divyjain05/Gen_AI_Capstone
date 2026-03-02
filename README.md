@@ -159,7 +159,7 @@ The application provides:
 ---
 
 ## Hosted Link
-
+https://genaicapstonedivy.streamlit.app
 
 ---
 
