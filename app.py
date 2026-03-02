@@ -21,7 +21,7 @@ st.write("Predict maintenance requirement using Logistic Regression or Decision 
 # --------------------------------------------------
 # Model Selection
 # --------------------------------------------------
-model_choice = st.radio("Choose Model", ["Logistic Regression", "Decision Tree"])
+model_choice = st.radio("Choose Model", ["Logistic Regression", "Decision Tree (Prefered model)"])
 
 # --------------------------------------------------
 # User Inputs (Minimal)
