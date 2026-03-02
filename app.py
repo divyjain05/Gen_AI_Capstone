@@ -14,10 +14,14 @@ df = pd.read_csv("cleaned_vehicle_data.csv")
 st.set_page_config(page_title="Vehicle Maintenance Prediction System", layout="wide")
 
 st.title("Vehicle Maintenance Prediction Assessment System")
-st.write("Predict whether a vehicle requires maintenance using Logistic Regression or Decision Tree.")
+st.write(
+    "Predict whether a vehicle requires maintenance using Logistic Regression or Decision Tree."
+)
 
 # Model Selection
-model_choice = st.radio("Select Model", ["Decision Tree (Prefered Model)" , "Logistic Regression"])
+model_choice = st.radio(
+    "Select Model", ["Decision Tree (Prefered Model)", "Logistic Regression"]
+)
 
 # User Inputs (Must Match Training)
 st.header("Enter Vehicle Details")
@@ -109,7 +113,7 @@ for col in feature_columns:
 X_full = X_full[feature_columns]
 
 X_full_scaled = scaler.transform(X_full)
-df["Risk_Score"] = log_model.predict_proba(X_full_scaled)[:,1]
+df["Risk_Score"] = log_model.predict_proba(X_full_scaled)[:, 1]
 
 col3, col4 = st.columns(2)
 
@@ -121,11 +125,7 @@ with col3:
 
     risk_bins = pd.cut(df["Risk_Score"], bins=10)
 
-    risk_dist = (
-        df.groupby(risk_bins)
-          .size()
-          .reset_index(name="Count")
-    )
+    risk_dist = df.groupby(risk_bins).size().reset_index(name="Count")
 
     # Convert interval to readable string
     risk_dist["Risk_Score"] = risk_dist["Risk_Score"].apply(
@@ -139,11 +139,7 @@ with col3:
 with col4:
     st.subheader("Average Risk by Vehicle Age")
 
-    age_group = (
-        df.groupby("Vehicle_Age")["Risk_Score"]
-          .mean()
-          .reset_index()
-    )
+    age_group = df.groupby("Vehicle_Age")["Risk_Score"].mean().reset_index()
 
     age_group["Vehicle_Age"] = age_group["Vehicle_Age"].astype(str)
 
@@ -154,11 +150,7 @@ st.subheader("Average Risk by Mileage Range")
 
 mileage_bins = pd.cut(df["Mileage"], bins=10)
 
-mileage_group = (
-    df.groupby(mileage_bins)["Risk_Score"]
-      .mean()
-      .reset_index()
-)
+mileage_group = df.groupby(mileage_bins)["Risk_Score"].mean().reset_index()
 
 mileage_group["Mileage"] = mileage_group["Mileage"].apply(
     lambda x: f"{int(x.left):,} - {int(x.right):,}"
