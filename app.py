@@ -6,7 +6,7 @@ import joblib
 # ---------------------------------
 # Load Artifacts
 # ---------------------------------
-log_model = joblib.load("logistic_model.pkl")
+log_model = joblib.load("logistic_model1.pkl")
 scaler = joblib.load("scaler.pkl")
 feature_columns = joblib.load("feature_columns.pkl")
 
