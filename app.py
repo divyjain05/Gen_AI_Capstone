@@ -11,9 +11,9 @@ feature_columns = joblib.load("feature_columns.pkl")
 
 df = pd.read_csv("cleaned_vehicle_data.csv")
 
-st.set_page_config(page_title="Vehicle Maintenance Risk System", layout="wide")
+st.set_page_config(page_title="Vehicle Maintenance Prediction System", layout="wide")
 
-st.title("Vehicle Maintenance Risk Assessment System")
+st.title("Vehicle Maintenance Prediction Assessment System")
 st.write("Predict whether a vehicle requires maintenance using Logistic Regression or Decision Tree.")
 
 # Model Selection
@@ -133,6 +133,7 @@ with col3:
     )
 
     st.bar_chart(risk_dist.set_index("Risk_Score"))
+
 
 # 2. Average Risk by Vehicle Age
 with col4:
