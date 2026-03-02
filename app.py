@@ -4,9 +4,9 @@ import numpy as np
 import joblib
 
 # ---------------------------------
-# Load Artifacts
+# Load Artifacts (NEW FILE NAMES)
 # ---------------------------------
-log_model = joblib.load("logistic_model1.pkl")
+log_model = joblib.load("logistic_model_balanced.pkl")
 scaler = joblib.load("scaler.pkl")
 feature_columns = joblib.load("feature_columns.pkl")
 
@@ -15,7 +15,6 @@ df = pd.read_csv("cleaned_vehicle_data.csv")
 st.set_page_config(page_title="Vehicle Failure Risk Scoring", layout="wide")
 
 st.title("Vehicle Failure Risk Assessment System")
-
 st.write("This system predicts probability of vehicle maintenance requirement.")
 
 # ---------------------------------
@@ -33,10 +32,13 @@ with col1:
 with col2:
     odometer = st.number_input("Odometer Reading", min_value=0.0, value=35000.0)
     service_history = st.number_input("Number of Past Services", min_value=0.0, value=6.0)
+    reported_issues = st.number_input("Reported Issues", min_value=0.0, value=1.0)
 
 # ---------------------------------
-# Build Full Feature Row
+# Build Input Row (MATCH TRAINING)
 # ---------------------------------
+
+# Start with median template
 input_dict = {}
 
 for col in df.columns:
@@ -48,19 +50,25 @@ for col in df.columns:
     else:
         input_dict[col] = df[col].median()
 
-# Override selected features
+# Override key features
 input_dict["Mileage"] = mileage
 input_dict["Vehicle_Age"] = vehicle_age
 input_dict["Engine_Size"] = engine_size
 input_dict["Odometer_Reading"] = odometer
 input_dict["Service_History"] = service_history
+input_dict["Reported_Issues"] = reported_issues
+
+# --- IMPORTANT: Feature Engineering SAME AS TRAINING ---
+input_dict["mileage_per_year"] = mileage / (vehicle_age + 1)
+input_dict["issues_per_year"] = reported_issues / (vehicle_age + 1)
+input_dict["service_gap"] = mileage / (service_history + 1)
 
 input_df = pd.DataFrame([input_dict])
 
-# One-hot encoding
+# One-hot encode
 input_df = pd.get_dummies(input_df)
 
-# Align columns
+# Align columns with training
 for col in feature_columns:
     if col not in input_df.columns:
         input_df[col] = 0
@@ -70,27 +78,38 @@ input_df = input_df[feature_columns]
 # ---------------------------------
 # Risk Prediction
 # ---------------------------------
+
 if st.button("Assess Failure Risk"):
 
     input_scaled = scaler.transform(input_df)
     probability = log_model.predict_proba(input_scaled)[0][1]
 
+    # Use threshold 0.5 (balanced decision)
+    prediction = 1 if probability > 0.5 else 0
+
     st.subheader("Failure Risk Score")
     st.metric("Maintenance Probability", f"{round(probability*100, 2)} %")
 
-    if probability < 0.30:
-        st.success("Risk Category: LOW")
-    elif probability < 0.60:
-        st.warning("Risk Category: MODERATE")
+    if prediction == 1:
+        st.error("Final Decision: Maintenance Required")
     else:
-        st.error("Risk Category: HIGH")
+        st.success("Final Decision: No Immediate Maintenance Required")
+
+    # Risk band display
+    if probability < 0.30:
+        st.info("Risk Level: LOW")
+    elif probability < 0.60:
+        st.warning("Risk Level: MODERATE")
+    else:
+        st.error("Risk Level: HIGH")
 
 # ---------------------------------
-# Dataset Risk Analytics
+# Dataset Analytics Section
 # ---------------------------------
+
 st.header("Dataset Risk Analytics")
 
-# Compute risk score for entire dataset
+# Prepare full dataset same way as training
 X_full = df.drop(columns=["Need_Maintenance"])
 X_full = pd.get_dummies(X_full)
 
