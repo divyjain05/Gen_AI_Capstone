@@ -158,30 +158,13 @@ The application provides:
 
 ---
 
-## Setup Instructions
-
-- Install dependencies:
-```
-pip install -r requirements.txt
-```
-
-
-- Run The Streamlit App
-
-From the project root:
-```
-streamlit run app.py
-```
-
-- Then open the local URL shown in the terminal (typically http://localhost:8501)
-
-Predicted Output
-
-The app performs binary classification:
-
-1 → Maintenance Required  
-0 → No Immediate Maintenance Required  
-
-
 ## Hosted Link
 
+
+---
+
+## Authors
+
+- Divy Kumar Jain
+- Utkarsh Jain
+- Praveen Kumar Nitharwal
