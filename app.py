@@ -3,9 +3,7 @@ import pandas as pd
 import numpy as np
 import joblib
 
-# --------------------------------------------------
 # Load Artifacts
-# --------------------------------------------------
 log_model = joblib.load("logistic_model_balanced.pkl")
 tree_model = joblib.load("decision_tree_balanced.pkl")
 scaler = joblib.load("scaler.pkl")
@@ -18,14 +16,10 @@ st.set_page_config(page_title="Vehicle Maintenance Risk System", layout="wide")
 st.title("Vehicle Maintenance Risk Assessment System")
 st.write("Predict whether a vehicle requires maintenance using Logistic Regression or Decision Tree.")
 
-# --------------------------------------------------
 # Model Selection
-# --------------------------------------------------
 model_choice = st.radio("Select Model", ["Logistic Regression", "Decision Tree (Prefered Model)"])
 
-# --------------------------------------------------
 # User Inputs (Must Match Training)
-# --------------------------------------------------
 st.header("Enter Vehicle Details")
 
 col1, col2 = st.columns(2)
@@ -40,9 +34,7 @@ with col2:
     service_history = st.number_input("Service History Count", min_value=0.0, value=6.0)
     odometer = st.number_input("Odometer Reading", min_value=0.0, value=45000.0)
 
-# --------------------------------------------------
 # Build Input Row
-# --------------------------------------------------
 input_dict = {}
 
 for col in df.columns:
@@ -75,9 +67,7 @@ for col in feature_columns:
 
 input_df = input_df[feature_columns]
 
-# --------------------------------------------------
 # Prediction
-# --------------------------------------------------
 if st.button("Predict Maintenance Requirement"):
 
     threshold = 0.7
@@ -106,9 +96,7 @@ if st.button("Predict Maintenance Requirement"):
     else:
         st.error("Risk Level: HIGH")
 
-# --------------------------------------------------
 # Dataset Risk Analytics
-# --------------------------------------------------
 st.header("Dataset Risk Analytics")
 
 X_full = df.drop(columns=["Need_Maintenance"])
@@ -134,4 +122,11 @@ with col4:
     st.bar_chart(df.groupby("Vehicle_Age")["Risk_Score"].mean())
 
 st.subheader("Average Risk by Mileage Range")
-st.bar_chart(df.groupby(pd.cut(df["Mileage"], bins=10))["Risk_Score"].mean())
+
+mileage_bins = pd.cut(df["Mileage"], bins=10)
+mileage_group = df.groupby(mileage_bins)["Risk_Score"].mean().reset_index()
+
+# Convert interval bins to string for Altair compatibility
+mileage_group["Mileage"] = mileage_group["Mileage"].astype(str)
+
+st.bar_chart(mileage_group.set_index("Mileage"))
