@@ -45,10 +45,11 @@ for col in df.columns:
     if col == "Need_Maintenance":
         continue
 
-    if df[col].dtype == "object":
-        input_dict[col] = df[col].mode()[0]
-    else:
+    if pd.api.types.is_numeric_dtype(df[col]):
         input_dict[col] = df[col].median()
+    else:
+        input_dict[col] = df[col].mode()[0]
+        
 
 # Override with user inputs
 input_dict["Mileage"] = mileage
